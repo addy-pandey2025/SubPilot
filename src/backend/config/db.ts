@@ -10,23 +10,15 @@ mongoose.set('bufferCommands', false);
 
 // Requirement 1 & 2: Use only this MONGODB_URI and remove any hardcoded or fallback MongoDB connection strings.
 const getCleanMongoUri = (): string => {
-  let uri = process.env.MONGODB_URI;
-  if (uri) {
-    uri = uri.trim();
-    if (uri.startsWith('MONGODB_URI=')) {
-      uri = uri.substring('MONGODB_URI='.length).trim();
-    }
-    if ((uri.startsWith('"') && uri.endsWith('"')) || (uri.startsWith("'") && uri.endsWith("'"))) {
-      uri = uri.substring(1, uri.length - 1).trim();
-    }
-    // If the system's environment variable has the apple825030_db_user, make sure it has the correct new password
-    if (uri.includes('apple825030_db_user')) {
-      uri = uri.replace(/apple825030_db_user:[^@]+/, 'apple825030_db_user:rahul12345');
-      return uri;
-    }
+  const uri = process.env.MONGODB_URI?.trim();
+
+  if (!uri) {
+    throw new Error(
+      "MONGODB_URI is missing. Please add it to your .env file."
+    );
   }
-  // Default to the corrected fallback URI with user's updated credentials
-  return 'mongodb+srv://apple825030_db_user:rahul12345@cluster0.wbmb0zu.mongodb.net/subpilot?retryWrites=true&w=majority&appName=Cluster0';
+
+  return uri;
 };
 
 const MONGODB_URI = getCleanMongoUri();
