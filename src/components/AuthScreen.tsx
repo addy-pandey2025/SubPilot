@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { 
-  auth 
+import {
+  auth
 } from '../lib/firebase';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signInAnonymously,
   GoogleAuthProvider,
   signInWithPopup
 } from 'firebase/auth';
 import { Shield, Sparkles, Mail, Lock, User, Info, ArrowRight, Loader2 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 interface AuthScreenProps {
   onSuccess: () => void;
@@ -39,36 +39,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onLocalGuestL
       }
       onSuccess();
     } catch (err: any) {
-      console.error(err);
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-        setError('Invalid email or password. Feel free to use "Continue as Guest" to try out all database systems instantly.');
-      } else if (err.code === 'auth/weak-password') {
-        setError('Password should be at least 6 characters.');
-      } else if (err.code === 'auth/email-already-in-use') {
-        setError('This email address is already registered. Try logging in.');
-      } else {
-        setError(err.message || 'Authentication failed. Please try again.');
-      }
+      setError(err.message || 'Authentication failed');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGuestLogin = async () => {
-    setError(null);
-    setLoading(true);
-    try {
-      await signInAnonymously(auth);
-      onSuccess();
-    } catch (err: any) {
-      console.warn("Firebase Anonymous Sign-In failed/disabled. Switching to Local Sandbox:", err);
-      onLocalGuestLogin();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
+  const handleGoogleSignIn = async () => {
     setError(null);
     setLoading(true);
     try {
@@ -76,224 +53,176 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onLocalGuestL
       await signInWithPopup(auth, provider);
       onSuccess();
     } catch (err: any) {
-      console.error(err);
-      if (err.code === 'auth/popup-closed-by-user') {
-        setError('The Google sign-in popup was closed before completing. Please try again.');
-      } else if (err.code === 'auth/unauthorized-domain') {
-        setError(`Firebase Authentication: This domain (${window.location.hostname}) is not authorized in your Firebase Project Console. See instructions below to add it.`);
-      } else {
-        setError(err.message || 'Google Sign-In failed.');
-      }
+      setError(err.message || 'Google sign in failed');
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div id="auth-screen" className="min-h-screen bg-bg flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Immersive ambient glowing spheres */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-[100px] -z-10 animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] -z-10 animate-pulse" />
+  const handleGuestLogin = async () => {
+    try {
+      await signInAnonymously(auth);
+      onSuccess();
+    } catch (err) {
+      onLocalGuestLogin();
+    }
+  };
 
+  return (
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#0a0b10] text-white p-4 sm:p-6 md:p-8">
       <motion.div 
-        initial={{ opacity: 0, y: 15 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-md premium-card p-8 md:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] animated-glow-border relative z-10"
+        className="w-full max-w-md bg-[#12131c] border border-gray-800/80 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl"
       >
-        {/* Brand identity header */}
-        <div className="text-center mb-8">
-          <div className="relative w-14 h-14 mx-auto mb-4 flex items-center justify-center cursor-pointer group">
-            <div className="absolute inset-0 bg-gradient-to-tr from-accent via-purple-500 to-amber-400 rounded-2xl rotate-6 opacity-75 blur-[2px] transition-transform group-hover:rotate-12 duration-300" />
-            <div className="absolute inset-0 bg-gradient-to-tr from-accent via-purple-600 to-amber-500 rounded-2xl transition-transform group-hover:scale-105 duration-300" />
-            <Shield className="relative w-7 h-7 text-white" />
+        {/* Header Logo & Title */}
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center mb-3 shadow-lg shadow-purple-500/20">
+            <Shield className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-text-main via-text-main to-accent font-display tracking-tight">SubPilot AI</h1>
-          <p className="text-xs text-text-dim mt-2 font-medium leading-relaxed">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400">
+            SubPilot AI
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-400 mt-1 max-w-xs">
             Enterprise-grade Subscription & SaaS Expense Control Command.
           </p>
         </div>
 
-        {/* Dynamic Credentials Form */}
+        {/* Error Alert */}
+        {error && (
+          <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs sm:text-sm flex items-start gap-2">
+            <Info className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Auth Form */}
         <form onSubmit={handleAuth} className="space-y-4">
           {isSignUp && (
             <div>
-              <label className="block text-[10px] font-bold text-text-dim uppercase tracking-widest mb-1.5">Full Name</label>
+              <label className="block text-[10px] font-semibold tracking-wider text-gray-400 uppercase mb-1">
+                Full Name
+              </label>
               <div className="relative">
-                <User className="w-4 h-4 text-text-dim absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input
                   type="text"
                   required
-                  placeholder="Rahul Samanta"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-sidebar border border-surface-border text-text-main placeholder:text-text-dim rounded-xl text-sm focus:bg-sidebar/80 focus:ring-2 focus:ring-accent/20 focus:border-accent focus:outline-none transition-all"
+                  placeholder="John Doe"
+                  className="w-full bg-[#0a0b10] border border-gray-800 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-purple-500 transition-colors"
                 />
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-[10px] font-bold text-text-dim uppercase tracking-widest mb-1.5">Email Address</label>
+            <label className="block text-[10px] font-semibold tracking-wider text-gray-400 uppercase mb-1">
+              Email Address
+            </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-text-dim absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <input
                 type="email"
                 required
-                placeholder="rahulsamanta5729@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-sidebar border border-surface-border text-text-main placeholder:text-text-dim rounded-xl text-sm focus:bg-sidebar/80 focus:ring-2 focus:ring-accent/20 focus:border-accent focus:outline-none transition-all"
+                placeholder="name@example.com"
+                className="w-full bg-[#0a0b10] border border-gray-800 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-purple-500 transition-colors"
               />
             </div>
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-[10px] font-bold text-text-dim uppercase tracking-widest">Password</label>
-            </div>
+            <label className="block text-[10px] font-semibold tracking-wider text-gray-400 uppercase mb-1">
+              Password
+            </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-text-dim absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
               <input
                 type="password"
                 required
-                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-sidebar border border-surface-border text-text-main placeholder:text-text-dim rounded-xl text-sm focus:bg-sidebar/80 focus:ring-2 focus:ring-accent/20 focus:border-accent focus:outline-none transition-all"
+                placeholder="••••••••"
+                className="w-full bg-[#0a0b10] border border-gray-800 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-purple-500 transition-colors"
               />
             </div>
           </div>
 
-          {error && (
-            <div className="space-y-3 pt-1">
-              <div className="flex items-start gap-2 bg-rose-500/10 border border-rose-500/20 text-rose-400 p-3.5 rounded-xl text-xs leading-relaxed">
-                <Info className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>{error}</span>
-              </div>
-              
-              {error.includes('unauthorized-domain') && (
-                <div className="p-4 bg-sidebar/80 border border-accent/20 rounded-xl text-xs space-y-3 text-text-main">
-                  <p className="font-bold text-accent">🛠️ How to authorize this domain in your Firebase project:</p>
-                  <ol className="list-decimal list-inside space-y-1.5 text-text-dim text-[11px]">
-                    <li>Go to the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-accent underline hover:text-blue-400">Firebase Console</a></li>
-                    <li>Select your project <strong className="text-text-main">subpilot-49963</strong></li>
-                    <li>Go to <strong className="text-text-main">Authentication</strong> &gt; <strong className="text-text-main">Settings</strong> &gt; <strong className="text-text-main">Authorized domains</strong></li>
-                    <li>Click <strong className="text-text-main">Add domain</strong> and enter:</li>
-                  </ol>
-                  <div className="flex items-center justify-between p-2.5 bg-black/40 rounded-lg border border-white/5 font-mono text-[11px] text-text-main">
-                    <span className="truncate mr-2">{window.location.hostname}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(window.location.hostname);
-                        setCopiedDomain(true);
-                        setTimeout(() => setCopiedDomain(false), 2000);
-                      }}
-                      className={`px-2.5 py-1 rounded text-[10px] font-bold transition-all shrink-0 cursor-pointer ${
-                        copiedDomain 
-                          ? 'bg-success/20 border border-success/30 text-success' 
-                          : 'bg-accent/20 border border-accent/30 text-accent hover:bg-accent/30'
-                      }`}
-                    >
-                      {copiedDomain ? 'Copied!' : 'Copy'}
-                    </button>
-                  </div>
-                  <p className="text-[10px] text-text-dim leading-relaxed">
-                    * After adding the domain, try clicking <strong>Sign in with Google</strong> again. No app rebuild or restart is required!
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-accent to-purple-600 hover:from-accent hover:to-indigo-600 disabled:bg-white/5 disabled:text-text-dim text-white font-bold py-3 px-4 rounded-xl text-sm transition-all shadow-[0_4px_15px_rgba(139,92,246,0.3)] hover:shadow-[0_6px_20px_rgba(139,92,246,0.4)] hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium py-2.5 px-4 rounded-xl text-sm transition-all shadow-lg shadow-purple-600/25 flex items-center justify-center gap-2"
           >
-            {loading ? (
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Working...
-              </>
-            ) : (
-              <>
-                {isSignUp ? 'Create SaaS Account' : 'Authenticate Console'}
+                <span>{isSignUp ? 'Create Account' : 'Authenticate Console'}</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
         </form>
 
-        <div className="mt-5 text-center">
+        <div className="text-center mt-4">
           <button
             type="button"
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-xs font-semibold text-accent hover:text-purple-400 transition-colors hover:underline cursor-pointer"
+            className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
           >
-            {isSignUp ? 'Already registered? Log in here' : 'New to SubPilot AI? Open a private workspace'}
+            {isSignUp ? 'Already have an account? Sign In' : 'New to SubPilot AI? Open a workspace'}
           </button>
         </div>
 
-        {/* Google sign-in alternative */}
-        <div className="relative my-6 text-center">
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-surface-border" />
-          <span className="relative bg-[#0E0D1A] px-3 text-[9px] font-bold text-text-dim uppercase tracking-widest">
-            or connect instantly
-          </span>
+        {/* Separator */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-800"></div>
+          </div>
+          <div className="relative flex justify-center text-[10px] uppercase tracking-wider">
+            <span className="bg-[#12131c] px-2 text-gray-500">Or Connect Instantly</span>
+          </div>
         </div>
 
+        {/* Google Auth Button */}
         <button
           type="button"
-          onClick={handleGoogleLogin}
+          onClick={handleGoogleSignIn}
           disabled={loading}
-          className="w-full bg-sidebar hover:bg-surface border border-surface-border hover:border-accent/40 text-text-main font-bold py-2.5 px-4 rounded-xl text-sm transition-all hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full bg-[#0a0b10] hover:bg-gray-900 border border-gray-800 text-gray-200 font-medium py-2.5 px-4 rounded-xl text-sm transition-colors flex items-center justify-center gap-3"
         >
-          <svg className="w-4 h-4 mr-1 shrink-0" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" viewBox="0 0 24 24">
             <path
-              fill="#EA4335"
-              d="M12 5.04c1.66 0 3.2.57 4.38 1.69l3.27-3.27C17.67 1.48 14.99 1 12 1 7.24 1 3.19 3.73 1.24 7.7l3.9 3.03C6.1 7.7 8.84 5.04 12 5.04z"
+              fill="currentColor"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
             />
             <path
-              fill="#4285F4"
-              d="M23.49 12.27c0-.81-.07-1.59-.2-2.34H12v4.45h6.45c-.28 1.47-1.11 2.71-2.36 3.55l3.66 2.84c2.14-1.97 3.38-4.88 3.38-8.5z"
+              fill="currentColor"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
             />
             <path
-              fill="#FBBC05"
-              d="M5.14 14.73c-.24-.71-.38-1.47-.38-2.27s.14-1.56.38-2.27L1.24 7.16C.45 8.76 0 10.53 0 12.4s.45 3.64 1.24 5.24l3.9-3.03z"
+              fill="currentColor"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
             />
             <path
-              fill="#34A853"
-              d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.66-2.84c-1.01.68-2.31 1.09-3.9 1.09-3.16 0-5.9-2.66-6.86-5.69l-3.9 3.03C3.19 20.27 7.24 23 12 23z"
+              fill="currentColor"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
             />
           </svg>
-          Sign in with Google
+          <span>Sign in with Google</span>
         </button>
 
-        {/* Guest access alternative */}
-        <div className="relative my-6 text-center">
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-px bg-surface-border" />
-          <span className="relative bg-[#0E0D1A] px-3 text-[9px] font-bold text-text-dim uppercase tracking-widest">
-            or test-drive instantly
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleGuestLogin}
-          disabled={loading}
-          className="w-full bg-sidebar hover:bg-surface border border-surface-border hover:border-accent/40 text-text-main font-bold py-2.5 px-4 rounded-xl text-sm transition-all hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer"
-        >
-          <Sparkles className="w-4 h-4 text-accent" />
-          Continue as Guest (Skip Account Setup)
-        </button>
-
-        <div className="mt-6 p-4.5 bg-accent/5 rounded-2xl flex items-start gap-2.5 border border-accent/15 shadow-[inset_0_1px_2px_rgba(255,255,255,0.02)]">
-          <Info className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-          <p className="text-[10px] text-text-dim leading-relaxed font-semibold">
-            We've set up complete Cloud databases for storage. Guest data remains private to this sandbox browser environment and links to a private guest account.
-          </p>
+        {/* Guest Login Option */}
+        <div className="mt-4">
+          <button
+            type="button"
+            onClick={handleGuestLogin}
+            className="w-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 font-medium py-2.5 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-2 border border-purple-500/20"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Continue as Guest (Skip Account Setup)</span>
+          </button>
         </div>
       </motion.div>
     </div>
