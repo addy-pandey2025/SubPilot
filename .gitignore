@@ -10,5 +10,5 @@ coverage/
 !.env.example
 
 # Firebase credentials
-firebase-applet-config.json
-src/backend/config/firebase-admin.json
+#firebase-applet-config.json
+#src/backend/config/firebase-admin.json
